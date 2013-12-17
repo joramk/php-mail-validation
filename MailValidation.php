@@ -6,14 +6,24 @@
  * $Id: MailValidation.php 4 2013-12-17 20:35:08Z joramk $
  * 
  * @summary   Validate an E-Mail address against various checks.
- * @tutorial  $validated = new MailValidation()
- *                       ->setEmailAddress('joe@example.org')
- *                       ->validate();
+ * @tutorial  $validated = new MailValidation('joe@example.org')->validate();
  * @author    Joram Knaack <joramk@gmail.com>
  * @copyright (C) Copyright 2013 Joram Knaack
  * @license   http://www.gnu.org/licenses/gpl.html
  * @link      http://code.google.com/p/php-mail-validation/
  * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 class MailValidation {
@@ -190,10 +200,13 @@ class MailValidation {
 	 * @param string $emailAddress The email address to check the length for
 	 * @return boolean True if overall length check and check for both parts are passed
 	 */
-	private function CheckLength($emailAddress) {
-		list($mailbox, $domain) = $this->_splitAddressParts($emailAddress);
+	private function CheckLength($mailboxOrMailAddress, $domain = null) {
+		if (is_null($domain))
+			list($mailbox, $domain) = $this->_splitAddressParts($mailboxOrMailAddress);
+		else
+			$mailbox = $mailboxOrMailAddress;
 		return !$this->DoCheckLength
-				|| ($this->_checkLengthMax($emailAddress, self::$MaximumOverallLength)
+				|| ($this->_checkLengthMax($mailbox . self::$MailboxDomainSeparator . $domain, self::$MaximumOverallLength)
 				 && $this->_checkLengthMin($mailbox, self::$MinimumMailboxNameLength)
 				 && $this->_checkLengthMax($mailbox, self::$MaximumMailboxNameLength)
 				 && $this->_checkLengthMin($domain, self::$MinimumDomainLength)

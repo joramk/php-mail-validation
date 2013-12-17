@@ -2,25 +2,25 @@
 E-Mail Validierung mit PHP 5.3+
 
 Aktive Checks
- - DNS und MX Eintrag prüfen
+ - DNS und MX Eintrag prï¿½fen
  - Testverbindung zum Mailserver
-   - Adresse prüfen
-   - offenen Port prüfen
+   - Adresse prï¿½fen
+   - offenen Port prï¿½fen
    - Open Relay Test 
 
 Passive Checks
-- Es darf nur ein @ Zeichen geben ?!
+- Es darf nur ein @ Zeichen geben ?! Nein -> mehrere!!!
 
- - Teil 1: Vor dem @-Zeichen
-   - Prüfen auf erlaubte Anzahl Zeichen
-   - nach RFC auf gültige Zeichen prüfen, http://tools.ietf.org/html/rfc6531#section-3.3
+ - Teil 1: Vor dem letzten @-Zeichen
+   - Prï¿½fen auf erlaubte Anzahl Zeichen
+   - nach RFC auf gï¿½ltige Zeichen prï¿½fen, http://tools.ietf.org/html/rfc6531#section-3.3
  
- - Teil 2: Nach dem @-Zeichen
+ - Teil 2: Nach dem letzten @-Zeichen
    - konvertieren von IDN Domains (UTF-8/Unicode), http://php.net/manual/de/ref.intl.idn.php
    - IPv6 kompatibel (IP statt Domain)
    - IP erkennen
-   - TLD extrahieren und prüfen, http://data.iana.org/TLD/tlds-alpha-by-domain.txt
-   - Länge prüfen (ggf. nach TLD Vorgaben 1-3 Zeichen min. etc.)
-   - Auf ungülgtige Zeichen prüfen, http://de.wikipedia.org/wiki/Internationalisierter_Domainname
+   - TLD extrahieren und prï¿½fen, http://data.iana.org/TLD/tlds-alpha-by-domain.txt
+   - Lï¿½nge prï¿½fen (ggf. nach TLD Vorgaben 1-3 Zeichen min. etc.)
+   - Auf ungï¿½lgtige Zeichen prï¿½fen, http://de.wikipedia.org/wiki/Internationalisierter_Domainname
 
  
