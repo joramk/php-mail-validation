@@ -100,7 +100,7 @@ class MailValidation {
 	public function setAllChecks($value = true) {
 		$this->setCheckDNS($value);
 		$this->setCheckControlChars($value);
-		$this->setCheckLength();
+		$this->setCheckLength($value);
 		$this->setCheckTopLevelDomain($value);
 		return $this;
 	}
@@ -160,7 +160,7 @@ class MailValidation {
 	 * @return boolean True if control chars are detected
 	 */
 	private function CheckControlChars($emailAddress) {
-		return $this->DoCheckControlChars || $this->_checkControlChars($emailAddress);
+		return !$this->DoCheckControlChars || $this->_checkControlChars($emailAddress);
 	}
 	
 	/**
