@@ -314,12 +314,28 @@ class MailValidation {
 		} 
 	}
 
-	private function CheckDNS($domainpart) {
-		return !$this->DoCheckDNS || $this->_checkDNS($domainpart);
+	/**
+	 * Checks if the domain has at least one valid MX record entry.
+	 * 
+	 * @param type $domainPart
+	 * @return boolean True if domain has at least one valid MX record
+	 */
+	private function CheckDNS($domainPart) {
+		return !$this->DoCheckDNS || $this->_checkDNS($domainPart);
 	}
 	
-	private function _checkDNS($domainpart) {
-		return getmxrr($domainpart);
+	/**
+	 * Checks the domain mx record entry
+	 * 
+	 * @param type $domainPart
+	 * @return boolean True if domain has at least one valid MX record
+	 */
+	private function _checkDNS($domainPart) {
+		foreach (dns_get_record($domainPart, DNS_MX) as $dnsRecord) {
+			if (checkdnsrr($dnsRecord['target'], 'A')) {
+				return true;
+			}
+		}
+		return false;
 	}
 }
-
