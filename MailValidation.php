@@ -28,13 +28,13 @@
 
 class MailValidation {
 	
-	private $EmailAddress;
+	public $EmailAddress;
 	
-	private $DoCheckLength = true;
-	private $DoCheckTopLevelDomain = true;
-	private $DoCheckControlChars = true;
-	private $DoCheckDNS = true;
-	private $DoAllowIpAsDomainPart = true;
+	public $DoCheckLength = true;
+	public $DoCheckTopLevelDomain = true;
+	public $DoCheckControlChars = true;
+	public $DoCheckDNS = true;
+	public $DoAllowIpAsDomainPart = true;
 	
 	static private $MailboxDomainSeparator = '@';
 	static private $MinimumDomainLength = 3;
@@ -43,7 +43,7 @@ class MailValidation {
 	static private $MaximumMailboxNameLength = 64;
 	static private $MaximumOverallLength = 256; // RFC 2821
 	static private $TopLevelDomainFile = 'MailValidation.tld';
-	static private $TopLevelDomainRegEx = '/\.([A-Za-z0-9-])$/';
+	static private $TopLevelDomainRegEx = '/[A-Za-z0-9-]+$/';
 	static private $ControlCharsRegEx = '/[\x00-\x1F\x7F-\xFF]/';
 	static private $ValidateIp4RegEx = '/^((2[0-4]|1\d|[1-9])?\d|25[0-5])(\.(?1)){3}\z/';
 	static private $ValidateIp6RegEx = '/^(((?=(?>.*?(::))(?!.+\3)))\3?|([\dA-F]{1,4}(\3|:(?!$)|$)|\2))(?4){5}((?4){2}|((2[0-4]|1\d|[1-9])?\d|25[0-5])(\.(?7)){3})\z/i';
@@ -88,7 +88,9 @@ class MailValidation {
 	 * @return \MailValidation
 	 */
 	public function setEmailAddress($value) {
-		if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) {
+		if (empty($value) || gettype($value) !== 'string') {
+			$this->EmailAddress = '';
+		} elseif (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) {
 			$this->EmailAddress = stripslashes($value);
 		} else {
 			$this->EmailAddress = $value;
@@ -174,7 +176,7 @@ class MailValidation {
 	 * @return type
 	 */
 	private function _checkControlChars($emailAddress) {
-		return preg_match(self::$ControlCharsRegEx, $emailAddress);
+		return preg_match(self::$ControlCharsRegEx, $emailAddress) !== 1;
 	}
 	
 	/**
@@ -206,10 +208,9 @@ class MailValidation {
 	 * @return boolean True if overall length check and check for both parts are passed
 	 */
 	private function CheckLength($mailboxOrMailAddress, $domain = null) {
+		$mailbox = $mailboxOrMailAddress;
 		if (is_null($domain)) {
-			list($mailbox, $domain) = $this->_splitAddressParts($mailboxOrMailAddress);
-		} else {
-			$mailbox = $mailboxOrMailAddress;
+			list($mailbox, $domain) = array_values($this->_splitAddressParts($mailboxOrMailAddress));
 		}
 		return !$this->DoCheckLength
 				|| ($this->_checkLengthMax($mailbox . self::$MailboxDomainSeparator . $domain, self::$MaximumOverallLength)
@@ -229,8 +230,11 @@ class MailValidation {
 	 * @return boolean True if the TLD of the domain part is known to the IANA
 	 */
 	private function _checkTopLevelDomain($domainPart) {
-		$matches = preg_match(self::$TopLevelDomainRegEx, $domainPart);
-		return in_array($matches[1], file(self::$TopLevelDomainFile));
+		$matches = array();
+		return preg_match(self::$TopLevelDomainRegEx, $domainPart, $matches) === 1
+				&& in_array(strtoupper($matches[0]), file(dirname(__FILE__) .
+				DIRECTORY_SEPARATOR . self::$TopLevelDomainFile,
+				FILE_USE_INCLUDE_PATH | FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
 	}
 	
 	/**
@@ -273,7 +277,7 @@ class MailValidation {
 	 * @return boolean True if the domain part is a valid IP address in brackets
 	 */
 	private function CheckIpAddress($domainPart) {
-		if (!preg_match('/\^[.?\]$/')) {
+		if (!preg_match(self::$ValidateIp4RegEx, $domainPart)) {
 			return false;
 		} else {
 			$unquotedIpAddress = substr($domainPart, 1, strlen($domainPart) - 2);
@@ -320,7 +324,7 @@ class MailValidation {
 	 * @param type $domainPart
 	 * @return boolean True if domain has at least one valid MX record
 	 */
-	private function CheckDNS($domainPart) {
+	protected function CheckDNS($domainPart) {
 		return !$this->DoCheckDNS || $this->_checkDNS($domainPart);
 	}
 	
