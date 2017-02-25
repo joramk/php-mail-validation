@@ -54,8 +54,9 @@ class MailValidation {
 	 * @param string $emailAddress Set the E-Mail address to validate.
 	 */
 	public function __construct($emailAddress = null) {
-		if(!empty($emailAddress))
+		if(!empty($emailAddress)) {
 			$this->EmailAddress = $emailAddress;
+		}
 	}
 	
 	/**
@@ -64,16 +65,19 @@ class MailValidation {
 	 * @return boolean True when the given E-Mail address is valid, otherwise false.
 	 */
 	public function validate() {
-		if(empty($this->EmailAddress))
+		if(empty($this->EmailAddress)) {
 			return false;
-		if(strstr($this->EmailAddress, self::$MailboxDomainSeparator) === false)
+		}
+		if(strstr($this->EmailAddress, self::$MailboxDomainSeparator) === false) {
 			return false;
+		}
 		$addressParts = $this->_splitAddressParts($this->EmailAddress);
 		$domainPart = $this->_convertUtf8ToIdnDomain($addressParts['domain']);
 		return $this->CheckControlChars($this->EmailAddress)
 				&& $this->CheckLength($this->EmailAddress)
 				&& ($this->CheckIpAddress($domainPart)
-						|| $this->CheckTopLevelDomain($domainPart))
+						|| ($this->CheckTopLevelDomain($domainPart)
+								&& $this->CheckDNS($domainPart)))
 				;
 	} 
 	
@@ -84,10 +88,11 @@ class MailValidation {
 	 * @return \MailValidation
 	 */
 	public function setEmailAddress($value) {
-		if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc())
+		if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) {
 			$this->EmailAddress = stripslashes($value);
-		else
+		} else {
 			$this->EmailAddress = $value;
+		}
 		return $this;
 	}
 	
@@ -178,7 +183,7 @@ class MailValidation {
 	 * @return type
 	 */
 	private function _convertUtf8ToIdnDomain($domainPart) {
-		return @idn_to_ascii($domainPart);
+		return idn_to_ascii($domainPart);
 	}
 	
 	/**
@@ -201,10 +206,11 @@ class MailValidation {
 	 * @return boolean True if overall length check and check for both parts are passed
 	 */
 	private function CheckLength($mailboxOrMailAddress, $domain = null) {
-		if (is_null($domain))
+		if (is_null($domain)) {
 			list($mailbox, $domain) = $this->_splitAddressParts($mailboxOrMailAddress);
-		else
+		} else {
 			$mailbox = $mailboxOrMailAddress;
+		}
 		return !$this->DoCheckLength
 				|| ($this->_checkLengthMax($mailbox . self::$MailboxDomainSeparator . $domain, self::$MaximumOverallLength)
 				 && $this->_checkLengthMin($mailbox, self::$MinimumMailboxNameLength)
@@ -307,4 +313,13 @@ class MailValidation {
 			return preg_match(self::$ValidateIp6RegEx, $ipAddress);
 		} 
 	}
+
+	private function CheckDNS($domainpart) {
+		return !$this->DoCheckDNS || $this->_checkDNS($domainpart);
+	}
+	
+	private function _checkDNS($domainpart) {
+		return getmxrr($domainpart);
+	}
 }
+
