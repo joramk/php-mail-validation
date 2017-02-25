@@ -48,6 +48,14 @@ class MailValidationTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals($this->object->setEmailAddress(false)->EmailAddress, '');
 	}
 
+	public function testDownloadTopLevelDomains() {
+		$this->assertTrue(is_writable('../MailValidation.tld'));
+		$this->object->DownloadTopLevelDomains();
+		$this->assertTrue(is_readable('../MailValidation.tld'));
+		$content = file('../MailValidation.tld');
+		$this->assertTrue(preg_match('/Version [0-9]+, Last Updated/', $content[0]) === 1);
+	}
+	
 	/**
 	 * @covers MailValidation::setAllChecks
 	 * @todo   Implement testSetAllChecks().

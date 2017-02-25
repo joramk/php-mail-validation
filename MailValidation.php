@@ -99,6 +99,18 @@ class MailValidation {
 	}
 	
 	/**
+	 * Downlaod latest TLD list
+	 * 
+	 * @param type $url
+	 * @return \MailValidation
+	 */
+	public function DownloadTopLevelDomains($url = 'http://data.iana.org/TLD/tlds-alpha-by-domain.txt') {
+		file_put_contents(dirname(__FILE__) . DIRECTORY_SEPARATOR . self::$TopLevelDomainFile, 
+				file_get_contents($url));
+		return $this;
+	}
+	
+	/**
 	 * Activates or deacitvates all checks
 	 * 
 	 * @param boolean $value True to activate all checks, false to disable them
