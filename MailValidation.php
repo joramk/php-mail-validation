@@ -72,6 +72,18 @@ class MailValidation extends MailValidationHelper {
 	} 
 	
 	/**
+	 * Downlaod latest TLD list
+	 * 
+	 * @param type $url
+	 * @return \MailValidation
+	 */
+	public function DownloadTopLevelDomains($url = null) {
+		file_put_contents(dirname(__FILE__) . DIRECTORY_SEPARATOR . self::$TopLevelDomainFile, 
+				file_get_contents(isset($url) ? $url : self::$TopLevelDomainUpdateUrl));
+		return $this;
+	}
+
+	/**
 	 * Sets the E-Mail address to validate.
 	 * 
 	 * @param string $value E-Mail address

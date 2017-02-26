@@ -49,18 +49,6 @@ class MailValidationHelper {
 	static public $ValidateIp6RegEx = '/^(((?=(?>.*?(::))(?!.+\3)))\3?|([\dA-F]{1,4}(\3|:(?!$)|$)|\2))(?4){5}((?4){2}|((2[0-4]|1\d|[1-9])?\d|25[0-5])(\.(?7)){3})\z/i';
 
 	/**
-	 * Downlaod latest TLD list
-	 * 
-	 * @param type $url
-	 * @return \MailValidation
-	 */
-	public function DownloadTopLevelDomains($url = null) {
-		file_put_contents(dirname(__FILE__) . DIRECTORY_SEPARATOR . self::$TopLevelDomainFile, 
-				file_get_contents(isset($url) ? $url : self::$TopLevelDomainUpdateUrl));
-		return $this;
-	}
-	
-	/**
 	 * Check the given E-Mail address against malicious control characters
 	 * 
 	 * @param string $emailAddress E-Mail address
@@ -147,7 +135,9 @@ class MailValidationHelper {
 	 * @return array An associative array consisting of the 'mailbox' and 'domain' part.
 	 */
 	protected function SplitAddressParts($emailAddress) {
-		$seperatorPosition = strrpos($emailAddress, self::$MailboxDomainSeparator);
+		if (($seperatorPosition = strrpos($emailAddress, self::$MailboxDomainSeparator)) === false) {
+			return array('mailbox' => $emailAddress, 'domain' => '');
+		}
 		return array('mailbox' => substr($emailAddress, 0, $seperatorPosition),
 				'domain' => substr($emailAddress, $seperatorPosition + 1));
 	}
