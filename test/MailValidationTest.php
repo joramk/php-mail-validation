@@ -32,7 +32,7 @@ class MailValidationTest extends PHPUnit_Framework_TestCase {
 	 * @todo   Implement testValidate().
 	 */
 	public function testValidate() {
-		$this->assertTrue($this->object->getAllowIpAsDomainPart());
+		$this->assertFalse($this->object->getAllowIpAsDomainPart());
 		$this->assertTrue($this->object->getCheckControlChars());
 		$this->assertTrue($this->object->getCheckDNS());
 		$this->assertTrue($this->object->getCheckLength());
@@ -41,14 +41,11 @@ class MailValidationTest extends PHPUnit_Framework_TestCase {
 		$this->assertTrue($this->object->getEmailAddress() === '');
 		$this->assertTrue($this->object->setEmailAddress('joe@iana.org')->validate());
 		$this->assertFalse($this->object->setEmailAddress('joe@example.com')->validate());
-		$this->assertTrue($this->object->setEmailAddress('01234@12.12.12.12')->validate());
-		$this->assertFalse($this->object->setEmailAddress('01234@312.12.12.12')->validate());
 		$this->assertFalse($this->object->setCheckDNS(false)->getCheckDNS());
 		$this->assertFalse($this->object->setEmailAddress('.x@example.com')->validate());
 		$this->assertFalse($this->object->setEmailAddress('01234@example.notexistenttld')->validate());
 		$this->assertTrue($this->object->setEmailAddress('x@example.com')->validate());
 		$this->assertTrue($this->object->setEmailAddress('x+x@example.com')->validate());
-		$this->assertTrue($this->object->setEmailAddress('01234@[2600::]')->validate());
 		$this->assertFalse($this->object->setEmailAddress('@example.com')->validate());
 		$this->assertFalse($this->object->setEmailAddress('123.@example.com')->validate());
 		$this->assertFalse($this->object->setEmailAddress('.123.@example.com')->validate());
@@ -103,13 +100,13 @@ class MailValidationTest extends PHPUnit_Framework_TestCase {
 		$this->assertFalse($this->object->getCheckControlChars());
 		$this->assertFalse($this->object->getCheckLength());
 		$this->assertFalse($this->object->getCheckTopLevelDomain());
-		$this->assertTrue($this->object->getAllowIpAsDomainPart());
+		$this->assertFalse($this->object->getAllowIpAsDomainPart());
 		$this->object->setAllChecks(true);
 		$this->assertTrue($this->object->getCheckDNS());
 		$this->assertTrue($this->object->getCheckControlChars());
 		$this->assertTrue($this->object->getCheckLength());
 		$this->assertTrue($this->object->getCheckTopLevelDomain());
-		$this->assertTrue($this->object->getAllowIpAsDomainPart());
+		$this->assertFalse($this->object->getAllowIpAsDomainPart());
 	}
 
 	/**
@@ -205,6 +202,14 @@ class MailValidationTest extends PHPUnit_Framework_TestCase {
 	public function testSetAllowIpAsDomainPart() {
 		$this->assertTrue($this->object->setAllowIpAsDomainPart(true)->getAllowIpAsDomainPart(), true);
 		$this->assertFalse($this->object->setAllowIpAsDomainPart(false)->getAllowIpAsDomainPart(), false);
+
+		$this->assertTrue($this->helper->testCheckIpAddress('[12.12.12.12]'));
+		$this->assertFalse($this->helper->testCheckIpAddress('12.12.12.12'));
+//		$this->assertFalse($this->helper->testCheckIpAddress('[0.12.12.12]'));
+		$this->assertFalse($this->helper->testCheckIpAddress('[256.12.12.12]'));
+		
+		$this->assertTrue($this->helper->testCheckIpAddress('[1::]'));
+		$this->assertFalse($this->helper->testCheckIpAddress('1::'));
 	}
 }
 
@@ -214,5 +219,12 @@ class MailValidationHelperTest extends MailValidationHelper {
 	}
 	public function test_checkLengthMax($value, $length) {
 		return $this->_checkLengthMax($value, $length);
+	}
+	public function testCheckIpAddress($value) {
+		$oldValue = $this->DoAllowIpAsDomainPart;
+		$this->DoAllowIpAsDomainPart = true;
+		$returnValue = $this->CheckIpAddress($value);
+		$this->DoAllowIpAsDomainPart = $oldValue;
+		return $returnValue;
 	}
 }

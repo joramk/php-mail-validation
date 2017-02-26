@@ -224,7 +224,7 @@ class MailValidationHelper {
 	protected $DoCheckTopLevelDomain = true;
 	protected $DoCheckControlChars = true;
 	protected $DoCheckDNS = true;
-	protected $DoAllowIpAsDomainPart = true;
+	protected $DoAllowIpAsDomainPart = false;
 	protected $DoValidateLocalPart = true;
 	
 	static public $MailboxDomainSeparator = '@';
@@ -363,17 +363,23 @@ class MailValidationHelper {
 	
 	/**
 	 * Checks if the domain part is a correct formatted IPv4 or IPv6 address
-	 * i.e. 127.0.0.1 or [::1]
+	 * i.e. [127.0.0.1] or [::1]
 	 * 
 	 * @param type $domainPart
 	 * @return boolean True if the domain part is a valid IP address in brackets
 	 */
 	protected function CheckIpAddress($domainPart) {
-		if (!empty($domainPart) && strlen($domainPart) < 5) {
+		if (!$this->DoAllowIpAsDomainPart || empty($domainPart)) {
+			return false;
+		}
+		if (strlen($domainPart) < 5) {
+			return false;
+		}
+		if (preg_match('/\[.+\]$/', $domainPart) !== 1) {
 			return false;
 		}
 		$unquotedIpAddress = substr($domainPart, 1, strlen($domainPart) - 2);
-		return !$this->DoAllowIpAsDomainPart || $this->_validateIp4Address($domainPart)
+		return $this->_validateIp4Address($unquotedIpAddress)
 				|| $this->_validateIp6Address($unquotedIpAddress);
 	}
 	
@@ -434,10 +440,20 @@ class MailValidationHelper {
 		return false;
 	}
 	
+	/**
+	 * 
+	 * @param type $localPart
+	 * @return type
+	 */
 	protected function ValidateLocalPart($localPart) {
 		return !$this->DoValidateLocalPart || $this->_validateLocalPart($localPart);
 	}
 	
+	/**
+	 * 
+	 * @param type $localPart
+	 * @return type
+	 */
 	protected function _validateLocalPart($localPart) {
 		return !(preg_match('/(^\.|\.$|\.\.)/', $localPart) === 1);
 	}
