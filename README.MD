@@ -7,10 +7,18 @@ Validating e-mail addresses is a complicated procedure. This helper class is eas
  * Check for length and formatting
  * Check for existing and valid MX entry
 
-## Usage examples ##
-``` $result = new MailValidation('joe@example.com')->validate(); ```
+## Current release ##
+Get the current version from [here](https://github.com/joramk/php-mail-validation/releases).
 
-``` $result = new MailValidation()->setEmailAddress('joe@example.com')->validate(); ```
+## Usage examples ##
+```
+<?php
+require_once('MailValidation.php');
+
+$result = new MailValidation('joe@example.com')->validate();
+$result = new MailValidation()->setEmailAddress('joe@example.com')->validate();
+$result = new MailValidation()->validate('joe@example.com');
+```
 
 ## Configurable parameters ##
 ```

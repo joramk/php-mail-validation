@@ -45,6 +45,7 @@ class MailValidationTest extends PHPUnit_Framework_TestCase {
 		$this->assertFalse($this->object->setEmailAddress('.x@example.com')->validate());
 		$this->assertFalse($this->object->setEmailAddress('01234@example.notexistenttld')->validate());
 		$this->assertTrue($this->object->setEmailAddress('x@example.com')->validate());
+		$this->assertTrue($this->object->validate('x@example.com'));
 		$this->assertTrue($this->object->setEmailAddress('x+x@example.com')->validate());
 		$this->assertFalse($this->object->setEmailAddress('@example.com')->validate());
 		$this->assertFalse($this->object->setEmailAddress('123.@example.com')->validate());
