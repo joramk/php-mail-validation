@@ -8,6 +8,7 @@ class MailValidationTest extends PHPUnit_Framework_TestCase {
 	 * @var MailValidation
 	 */
 	protected $object;
+	protected $helper;
 
 	/**
 	 * Sets up the fixture, for example, opens a network connection.
@@ -15,6 +16,7 @@ class MailValidationTest extends PHPUnit_Framework_TestCase {
 	 */
 	protected function setUp() {
 		$this->object = new MailValidation;
+		$this->helper = new MailValidationHelperTest();
 	}
 
 	/**
@@ -91,7 +93,7 @@ class MailValidationTest extends PHPUnit_Framework_TestCase {
 		$content = file('../MailValidation.tld');
 		$this->assertTrue(preg_match('/Version [0-9]+, Last Updated/', $content[0]) === 1);
 	}
-	
+
 	/**
 	 * @covers MailValidation::setAllChecks
 	 */
@@ -137,6 +139,54 @@ class MailValidationTest extends PHPUnit_Framework_TestCase {
 	public function testSetCheckLength() {
 		$this->assertTrue($this->object->setCheckLength(true)->getCheckLength(), true);
 		$this->assertFalse($this->object->setCheckLength(false)->getCheckLength(), false);
+		
+		/*
+		 * Helper check length max tests
+		 */
+		$this->assertTrue($this->helper->test_checkLengthMax(str_pad('',
+				MailValidationHelperTest::$MaximumOverallLength, 'a'),
+				MailValidationHelperTest::$MaximumOverallLength));
+		$this->assertFalse($this->helper->test_checkLengthMax(str_pad('',
+				MailValidationHelperTest::$MaximumOverallLength + 1, 'a'),
+				MailValidationHelperTest::$MaximumOverallLength));
+
+		$this->assertTrue($this->helper->test_checkLengthMax(str_pad('',
+				MailValidationHelperTest::$MaximumMailboxNameLength, 'a'),
+				MailValidationHelperTest::$MaximumMailboxNameLength));
+		$this->assertFalse($this->helper->test_checkLengthMax(str_pad('',
+				MailValidationHelperTest::$MaximumMailboxNameLength + 1, 'a'),
+				MailValidationHelperTest::$MaximumMailboxNameLength));
+
+		$this->assertTrue($this->helper->test_checkLengthMax(str_pad('',
+				MailValidationHelperTest::$MaximumDomainLength, 'a'),
+				MailValidationHelperTest::$MaximumDomainLength));
+		$this->assertFalse($this->helper->test_checkLengthMax(str_pad('',
+				MailValidationHelperTest::$MaximumDomainLength + 1, 'a'),
+				MailValidationHelperTest::$MaximumDomainLength));
+
+		/**
+		 * Helper check length min tests
+		 */
+		$this->assertTrue($this->helper->test_checkLengthMin('1@1.1',
+				MailValidationHelperTest::$MinimumMailboxNameLength +
+				MailValidationHelperTest::$MinimumDomainLength));
+		$this->assertFalse($this->helper->test_checkLengthMin('1@1',
+				MailValidationHelperTest::$MinimumMailboxNameLength +
+				MailValidationHelperTest::$MinimumDomainLength));
+
+		$this->assertTrue($this->helper->test_checkLengthMin(str_pad('',
+				MailValidationHelperTest::$MinimumMailboxNameLength, 'a'),
+				MailValidationHelperTest::$MinimumMailboxNameLength));
+		$this->assertFalse($this->helper->test_checkLengthMin(str_pad('',
+				MailValidationHelperTest::$MinimumMailboxNameLength - 1, 'a'),
+				MailValidationHelperTest::$MinimumMailboxNameLength));
+
+		$this->assertTrue($this->helper->test_checkLengthMin(str_pad('',
+				MailValidationHelperTest::$MinimumDomainLength, 'a'),
+				MailValidationHelperTest::$MinimumDomainLength));
+		$this->assertFalse($this->helper->test_checkLengthMin(str_pad('',
+				MailValidationHelperTest::$MinimumDomainLength - 1, 'a'),
+				MailValidationHelperTest::$MinimumDomainLength));
 	}
 
 	/**
@@ -147,7 +197,7 @@ class MailValidationTest extends PHPUnit_Framework_TestCase {
 		$this->assertTrue($this->object->setCheckTopLevelDomain(true)->getCheckTopLevelDomain(), true);
 		$this->assertFalse($this->object->setCheckTopLevelDomain(false)->getCheckTopLevelDomain(), false);
 	}
-	
+
 	/**
 	 * @covers MailValidation::setAllowIpAsDomainPart
 	 * @covers MailValidation::gettAllowIpAsDomainPart
@@ -155,5 +205,14 @@ class MailValidationTest extends PHPUnit_Framework_TestCase {
 	public function testSetAllowIpAsDomainPart() {
 		$this->assertTrue($this->object->setAllowIpAsDomainPart(true)->getAllowIpAsDomainPart(), true);
 		$this->assertFalse($this->object->setAllowIpAsDomainPart(false)->getAllowIpAsDomainPart(), false);
+	}
+}
+
+class MailValidationHelperTest extends MailValidationHelper {
+	public function test_checkLengthMin($value, $length) {
+		return $this->_checkLengthMin($value, $length);
+	}
+	public function test_checkLengthMax($value, $length) {
+		return $this->_checkLengthMax($value, $length);
 	}
 }

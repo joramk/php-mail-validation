@@ -7,8 +7,10 @@ Validating e-mail addresses is a complicated procedure. This helper class is eas
  * Check for length and formatting
  * Check for existing and valid MX entry
 
-## Usage example ##
-``` $result = new Mailvalidation('joe@example.com')->validate(); ```
+## Usage examples ##
+``` $result = new MailValidation('joe@example.com')->validate(); ```
+
+``` $result = new MailValidation()->setEmailAddress('joe@example.com')->validate(); ```
 
 ## Configurable parameters ##
 ```
