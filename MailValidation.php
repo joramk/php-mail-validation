@@ -28,13 +28,14 @@
 
 class MailValidation {
 	
-	public $EmailAddress;
+	private $EmailAddress;
 	
-	public $DoCheckLength = true;
-	public $DoCheckTopLevelDomain = true;
-	public $DoCheckControlChars = true;
-	public $DoCheckDNS = true;
-	public $DoAllowIpAsDomainPart = true;
+	private $DoCheckLength = true;
+	private $DoCheckTopLevelDomain = true;
+	private $DoCheckControlChars = true;
+	private $DoCheckDNS = true;
+	private $DoAllowIpAsDomainPart = true;
+	private $DoValidateLocalPart = true;
 	
 	static private $MailboxDomainSeparator = '@';
 	static private $MinimumDomainLength = 3;
@@ -42,6 +43,7 @@ class MailValidation {
 	static private $MinimumMailboxNameLength = 1;
 	static private $MaximumMailboxNameLength = 64;
 	static private $MaximumOverallLength = 256; // RFC 2821
+	static private $TopLevelDomainUpdateUrl = 'http://data.iana.org/TLD/tlds-alpha-by-domain.txt';
 	static private $TopLevelDomainFile = 'MailValidation.tld';
 	static private $TopLevelDomainRegEx = '/[A-Za-z0-9-]+$/';
 	static private $ControlCharsRegEx = '/[\x00-\x1F\x7F-\xFF]/';
@@ -56,6 +58,8 @@ class MailValidation {
 	public function __construct($emailAddress = null) {
 		if(!empty($emailAddress)) {
 			$this->EmailAddress = $emailAddress;
+		} else {
+			$this->EmailAddress = '';
 		}
 	}
 	
@@ -75,6 +79,7 @@ class MailValidation {
 		$domainPart = $this->_convertUtf8ToIdnDomain($addressParts['domain']);
 		return $this->CheckControlChars($this->EmailAddress)
 				&& $this->CheckLength($this->EmailAddress)
+				&& $this->ValidateLocalPart($addressParts['mailbox'])
 				&& ($this->CheckIpAddress($domainPart)
 						|| ($this->CheckTopLevelDomain($domainPart)
 								&& $this->CheckDNS($domainPart)))
@@ -98,15 +103,19 @@ class MailValidation {
 		return $this;
 	}
 	
+	public function getEmailAddress() {
+		return $this->EmailAddress;
+	}
+
 	/**
 	 * Downlaod latest TLD list
 	 * 
 	 * @param type $url
 	 * @return \MailValidation
 	 */
-	public function DownloadTopLevelDomains($url = 'http://data.iana.org/TLD/tlds-alpha-by-domain.txt') {
+	public function DownloadTopLevelDomains($url = null) {
 		file_put_contents(dirname(__FILE__) . DIRECTORY_SEPARATOR . self::$TopLevelDomainFile, 
-				file_get_contents($url));
+				file_get_contents(isset($url) ? $url : self::$TopLevelDomainUpdateUrl));
 		return $this;
 	}
 	
@@ -124,6 +133,15 @@ class MailValidation {
 		return $this;
 	}
 
+	public function setAllowIpAsDomainPart($value = true) {
+		$this->DoAllowIpAsDomainPart = $value === true ? true : false;
+		return $this;
+	}
+	
+	public function getAllowIpAsDomainPart() {
+		return $this->DoAllowIpAsDomainPart;
+	}
+	
 	/**
 	 * Activates or deactivates the DNS record check for the domain part
 	 * of an E-Mail address.
@@ -134,6 +152,10 @@ class MailValidation {
 	public function setCheckDNS($value = true) {
 		$this->DoCheckDNS = $value === true ? true : false;
 		return $this;
+	}
+	
+	public function getCheckDNS() {
+		return $this->DoCheckDNS;
 	}
 	
 	/**
@@ -148,6 +170,10 @@ class MailValidation {
 		return $this;
 	}
 	
+	public function getCheckControlChars() {
+		return $this->DoCheckControlChars;
+	}
+	
 	/**
 	 * Activates or deactivates the check for the length of the
 	 * E-Mail address.
@@ -158,6 +184,10 @@ class MailValidation {
 	public function setCheckLength($value = true) {
 		$this->DoCheckLength = $value === true ? true : false;
 		return $this;
+	}
+	
+	public function getCheckLength() {
+		return $this->DoCheckLength;
 	}
 	
 	/**
@@ -172,6 +202,24 @@ class MailValidation {
 		return $this;
 	}
 	
+	public function getCheckTopLevelDomain() {
+		return $this->DoCheckTopLevelDomain;
+	}
+	
+	/**
+	 * 
+	 * @param type $value
+	 * @return $this
+	 */
+	public function setValidateLocalPart($value = true) {
+		$this->DoValidateLocalPart = $value === true ? true : false;
+		return $this;
+	}
+	
+	public function getValidateLocalPart() {
+		return $this->DoValidateLocalPart;
+	}
+
 	/**
 	 * Check the given E-Mail address against malicious control characters
 	 * 
@@ -283,19 +331,18 @@ class MailValidation {
 	
 	/**
 	 * Checks if the domain part is a correct formatted IPv4 or IPv6 address
-	 * i.e. [127.0.0.1] or [::1]
+	 * i.e. 127.0.0.1 or [::1]
 	 * 
 	 * @param type $domainPart
 	 * @return boolean True if the domain part is a valid IP address in brackets
 	 */
 	private function CheckIpAddress($domainPart) {
-		if (!preg_match(self::$ValidateIp4RegEx, $domainPart)) {
+		if (!empty($domainPart) && strlen($domainPart) < 5) {
 			return false;
-		} else {
-			$unquotedIpAddress = substr($domainPart, 1, strlen($domainPart) - 2);
-			return !$this->DoAllowIpAsDomainPart || !($this->_validateIp4Address($unquotedIpAddress)
-					&& $this->_validateIp6Address($unquotedIpAddress));
 		}
+		$unquotedIpAddress = substr($domainPart, 1, strlen($domainPart) - 2);
+		return !$this->DoAllowIpAsDomainPart || $this->_validateIp4Address($domainPart)
+				|| $this->_validateIp6Address($unquotedIpAddress);
 	}
 	
 	/**
@@ -353,5 +400,13 @@ class MailValidation {
 			}
 		}
 		return false;
+	}
+	
+	private function ValidateLocalPart($localPart) {
+		return !$this->DoValidateLocalPart || $this->_validateLocalPart($localPart);
+	}
+	
+	private function _validateLocalPart($localPart) {
+		return !(preg_match('/(^\.|\.$|\.\.)/', $localPart) === 1);
 	}
 }

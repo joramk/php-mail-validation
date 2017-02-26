@@ -30,12 +30,48 @@ class MailValidationTest extends PHPUnit_Framework_TestCase {
 	 * @todo   Implement testValidate().
 	 */
 	public function testValidate() {
-		$this->object->setEmailAddress('joe@iana.org');
-		$this->object->setAllChecks(true);
-		$this->assertTrue($this->object->validate());
-
-		$this->object->setEmailAddress('joe@example.com');
-		$this->assertFalse($this->object->validate());
+		$this->assertTrue($this->object->getAllowIpAsDomainPart());
+		$this->assertTrue($this->object->getCheckControlChars());
+		$this->assertTrue($this->object->getCheckDNS());
+		$this->assertTrue($this->object->getCheckLength());
+		$this->assertTrue($this->object->getCheckTopLevelDomain());
+		$this->assertTrue($this->object->getValidateLocalPart());
+		$this->assertTrue($this->object->getEmailAddress() === '');
+		$this->assertTrue($this->object->setEmailAddress('joe@iana.org')->validate());
+		$this->assertFalse($this->object->setEmailAddress('joe@example.com')->validate());
+		$this->assertTrue($this->object->setEmailAddress('01234@12.12.12.12')->validate());
+		$this->assertFalse($this->object->setEmailAddress('01234@312.12.12.12')->validate());
+		$this->assertFalse($this->object->setCheckDNS(false)->getCheckDNS());
+		$this->assertFalse($this->object->setEmailAddress('.x@example.com')->validate());
+		$this->assertFalse($this->object->setEmailAddress('01234@example.notexistenttld')->validate());
+		$this->assertTrue($this->object->setEmailAddress('x@example.com')->validate());
+		$this->assertTrue($this->object->setEmailAddress('x+x@example.com')->validate());
+		$this->assertTrue($this->object->setEmailAddress('01234@[2600::]')->validate());
+		$this->assertFalse($this->object->setEmailAddress('@example.com')->validate());
+		$this->assertFalse($this->object->setEmailAddress('123.@example.com')->validate());
+		$this->assertFalse($this->object->setEmailAddress('.123.@example.com')->validate());
+		$this->assertFalse($this->object->setEmailAddress('12..3@example.com')->validate());
+		$this->assertTrue($this->object->setEmailAddress('123@@example.com')->validate());
+		/**
+		 * BEGIN PMV-1 Test cases
+		 */
+		$this->assertTrue($this->object->setEmailAddress('niceandsimple@example.com')->validate());
+		$this->assertTrue($this->object->setEmailAddress('a.little.unusual@example.com')->validate());
+		$this->assertTrue($this->object->setEmailAddress('a.little.more.unusual@dept.example.com')->validate());
+		$this->assertTrue($this->object->setEmailAddress('much."more\ unusual"@example.com')->validate());
+		$this->assertTrue($this->object->setEmailAddress('very.unusual."@".unusual.com@example.com')->validate());
+		$this->assertTrue($this->object->setEmailAddress('very."(),:;<>[]".VERY."very@\\\ \"very".unusual@strange.example.com')->validate());
+		$this->assertFalse($this->object->setEmailAddress('Abc.example.com')->validate());
+		$this->assertFalse($this->object->setEmailAddress('Abc.@example.com')->validate());
+		$this->assertFalse($this->object->setEmailAddress('Abc..123@example.com')->validate());
+//		$this->assertFalse($this->object->setEmailAddress('A@b@c@example.com')->validate());
+//		$this->assertFalse($this->object->setEmailAddress('a"b(c)d,e:f;g<h>i[j\k]l@example.com')->validate());
+//		$this->assertFalse($this->object->setEmailAddress('just"not"right@example.com')->validate());
+//		$this->assertFalse($this->object->setEmailAddress('this is"not\allowed@example.com')->validate());
+//		$this->assertFalse($this->object->setEmailAddress('this\ still\"not\\allowed@example.com')->validate());
+		/**
+		 * END PMV1- Test cases
+		 */
 	}
 
 	/**
@@ -43,14 +79,14 @@ class MailValidationTest extends PHPUnit_Framework_TestCase {
 	 * @todo   Implement testSetEmailAddress().
 	 */
 	public function testSetEmailAddress() {
-		$this->assertEquals($this->object->setEmailAddress('joe@example.com')->EmailAddress, 'joe@example.com');
-		$this->assertEquals($this->object->setEmailAddress(null)->EmailAddress, '');
-		$this->assertEquals($this->object->setEmailAddress(false)->EmailAddress, '');
+		$this->assertEquals($this->object->setEmailAddress('joe@example.com')->getEmailAddress(), 'joe@example.com');
+		$this->assertEquals($this->object->setEmailAddress(null)->getEmailAddress(), '');
+		$this->assertEquals($this->object->setEmailAddress(false)->getEmailAddress(), '');
 	}
 
 	public function testDownloadTopLevelDomains() {
 		$this->assertTrue(is_writable('../MailValidation.tld'));
-		$this->object->DownloadTopLevelDomains();
+		$this->assertInstanceOf(MailValidation::class, $this->object->DownloadTopLevelDomains());
 		$this->assertTrue(is_readable('../MailValidation.tld'));
 		$content = file('../MailValidation.tld');
 		$this->assertTrue(preg_match('/Version [0-9]+, Last Updated/', $content[0]) === 1);
@@ -58,56 +94,66 @@ class MailValidationTest extends PHPUnit_Framework_TestCase {
 	
 	/**
 	 * @covers MailValidation::setAllChecks
-	 * @todo   Implement testSetAllChecks().
 	 */
 	public function testSetAllChecks() {
 		$this->object->setAllChecks(false);
-		$this->assertFalse($this->object->DoCheckDNS);
-		$this->assertFalse($this->object->DoCheckControlChars);
-		$this->assertFalse($this->object->DoCheckLength);
-		$this->assertFalse($this->object->DoCheckTopLevelDomain);
+		$this->assertFalse($this->object->getCheckDNS());
+		$this->assertFalse($this->object->getCheckControlChars());
+		$this->assertFalse($this->object->getCheckLength());
+		$this->assertFalse($this->object->getCheckTopLevelDomain());
+		$this->assertTrue($this->object->getAllowIpAsDomainPart());
 		$this->object->setAllChecks(true);
-		$this->assertTrue($this->object->DoCheckDNS);
-		$this->assertTrue($this->object->DoCheckControlChars);
-		$this->assertTrue($this->object->DoCheckLength);
-		$this->assertTrue($this->object->DoCheckTopLevelDomain);
+		$this->assertTrue($this->object->getCheckDNS());
+		$this->assertTrue($this->object->getCheckControlChars());
+		$this->assertTrue($this->object->getCheckLength());
+		$this->assertTrue($this->object->getCheckTopLevelDomain());
+		$this->assertTrue($this->object->getAllowIpAsDomainPart());
 	}
 
 	/**
 	 * @covers MailValidation::setCheckDNS
-	 * @todo   Implement testSetCheckDNS().
+	 * @covers MailValidation::getCheckDNS
 	 */
 	public function testSetCheckDNS() {
-		$this->assertTrue($this->object->setCheckDNS(true)->DoCheckDNS, true);
+		$this->assertTrue($this->object->setCheckDNS(true)->getCheckDNS(), true);
 		$this->assertFalse($this->object->setEmailAddress('joe@example.com')->validate());
-		$this->assertFalse($this->object->setCheckDNS(false)->DoCheckDNS, false);
+		$this->assertFalse($this->object->setCheckDNS(false)->getCheckDNS(), false);
 		$this->assertTrue($this->object->setEmailAddress('joe@example.com')->validate());
 	}
 
 	/**
 	 * @covers MailValidation::setCheckControlChars
-	 * @todo   Implement testSetCheckControlChars().
+	 * @covers MailValidation::getCheckControlChars
 	 */
 	public function testSetCheckControlChars() {
-		$this->assertTrue($this->object->setCheckControlChars(true)->DoCheckControlChars, true);
-		$this->assertFalse($this->object->setCheckControlChars(false)->DoCheckControlChars, false);
+		$this->assertTrue($this->object->setCheckControlChars(true)->getCheckControlChars(), true);
+		$this->assertFalse($this->object->setCheckControlChars(false)->getCheckControlChars(), false);
 	}
 
 	/**
 	 * @covers MailValidation::setCheckLength
-	 * @todo   Implement testSetCheckLength().
+	 * @covers MailValidation::getCheckLength
 	 */
 	public function testSetCheckLength() {
-		$this->assertTrue($this->object->setCheckLength(true)->DoCheckLength, true);
-		$this->assertFalse($this->object->setCheckLength(false)->DoCheckLength, false);
+		$this->assertTrue($this->object->setCheckLength(true)->getCheckLength(), true);
+		$this->assertFalse($this->object->setCheckLength(false)->getCheckLength(), false);
 	}
 
 	/**
 	 * @covers MailValidation::setCheckTopLevelDomain
-	 * @todo   Implement testSetCheckTopLevelDomain().
+	 * @covers MailValidation::gettCheckTopLevelDomain
 	 */
 	public function testSetCheckTopLevelDomain() {
-		$this->assertTrue($this->object->setCheckTopLevelDomain(true)->DoCheckTopLevelDomain, true);
-		$this->assertFalse($this->object->setCheckTopLevelDomain(false)->DoCheckTopLevelDomain, false);
+		$this->assertTrue($this->object->setCheckTopLevelDomain(true)->getCheckTopLevelDomain(), true);
+		$this->assertFalse($this->object->setCheckTopLevelDomain(false)->getCheckTopLevelDomain(), false);
+	}
+	
+	/**
+	 * @covers MailValidation::setAllowIpAsDomainPart
+	 * @covers MailValidation::gettAllowIpAsDomainPart
+	 */
+	public function testSetAllowIpAsDomainPart() {
+		$this->assertTrue($this->object->setAllowIpAsDomainPart(true)->getAllowIpAsDomainPart(), true);
+		$this->assertFalse($this->object->setAllowIpAsDomainPart(false)->getAllowIpAsDomainPart(), false);
 	}
 }
